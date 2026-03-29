@@ -2,11 +2,9 @@ import Foundation
 
 final class PilotLiveManager {
     private let httpClient: PilotHttpClient
-    private let updatePollInterval: (Bool, Int64) -> Void
 
-    init(httpClient: PilotHttpClient, updatePollInterval: @escaping (Bool, Int64) -> Void) {
+    init(httpClient: PilotHttpClient) {
         self.httpClient = httpClient
-        self.updatePollInterval = updatePollInterval
     }
 
     func start(sessionToken: String, payload: [String: Any]?) -> [String: Any] {
@@ -15,7 +13,6 @@ final class PilotLiveManager {
     }
 
     func stop() -> [String: Any] {
-        updatePollInterval(false, 0)
         return buildAck(ok: true, status: "stopped")
     }
 
@@ -28,7 +25,6 @@ final class PilotLiveManager {
     }
 
     func onSessionClosed() {
-        updatePollInterval(false, 0)
     }
 
     func shutdown() {}

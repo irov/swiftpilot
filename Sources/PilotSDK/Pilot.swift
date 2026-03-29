@@ -4,7 +4,7 @@ import UIKit
 #endif
 
 public final class Pilot {
-    public static let version = "1.0.33"
+    public static let version = "1.0.34"
 
     private static var instance: Pilot?
     private static let instanceLock = NSLock()
@@ -45,10 +45,7 @@ public final class Pilot {
         let client = PilotHttpClient(baseUrl: config.baseUrl, apiToken: config.apiToken)
         self.httpClient = client
         self.currentActionPollIntervalMs = config.actionPollIntervalMs
-
-        self.liveManager = PilotLiveManager(httpClient: client) { [weak self] enabled, requestedInterval in
-            self?.updateLiveMode(enabled: enabled, requestedPollIntervalMs: requestedInterval)
-        }
+        self.liveManager = PilotLiveManager(httpClient: client)
 
         PilotLog.setLevel(config.logConfig.logLevel)
         PilotLog.setLoggerListener(config.loggerListener)
@@ -700,33 +697,6 @@ public final class Pilot {
         timer.resume()
         actionPollTimer = timer
         lock.unlock()
-    }
-
-    private func updateLiveMode(enabled: Bool, requestedPollIntervalMs: Int64) {
-        lock.lock()
-        let token = sessionToken
-        let isRunning = running
-        lock.unlock()
-
-        guard let token = token, isRunning else { return }
-
-        let targetIntervalMs: Int64
-        if enabled {
-            let requested = requestedPollIntervalMs > 0 ? requestedPollIntervalMs : 500
-            targetIntervalMs = max(200, min(requested, config.actionPollIntervalMs))
-        } else {
-            targetIntervalMs = config.actionPollIntervalMs
-        }
-
-        lock.lock()
-        let current = currentActionPollIntervalMs
-        lock.unlock()
-
-        guard targetIntervalMs != current else { return }
-
-        workQueue?.async { [weak self] in
-            self?.scheduleActionPolling(sessionToken: token, intervalMs: targetIntervalMs)
-        }
     }
 
     private func handleInternalAction(_ action: PilotAction) -> Bool {
