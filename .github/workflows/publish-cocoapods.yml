@@ -13,10 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Add LiveKit podspec repo
+        run: pod repo add livekit https://github.com/livekit/podspecs.git
+
       - name: Validate podspec
-        run: pod spec lint PilotSDK.podspec --allow-warnings --sources='https://github.com/livekit/podspecs.git,https://cdn.cocoapods.org/'
+        run: pod spec lint PilotSDK.podspec --allow-warnings --sources='livekit,trunk'
 
       - name: Publish to CocoaPods trunk
         env:
           COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
-        run: pod trunk push PilotSDK.podspec --allow-warnings --sources='https://github.com/livekit/podspecs.git,https://cdn.cocoapods.org/'
+        run: pod trunk push PilotSDK.podspec --allow-warnings
