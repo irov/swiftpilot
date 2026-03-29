@@ -283,7 +283,8 @@ public class PilotBridge: NSObject {
         Pilot.initialize(config)
     }
 
-    public static func initializeWithBuilder(_ builder: PilotObjCConfigBuilder) {
+    @objc(initialize:)
+    public static func initialize(_ builder: PilotObjCConfigBuilder) {
         Pilot.initialize(builder.build())
     }
 
