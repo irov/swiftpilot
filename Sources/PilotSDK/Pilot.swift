@@ -4,7 +4,7 @@ import UIKit
 #endif
 
 public final class Pilot {
-    public static let version = "1.0.32"
+    public static let version = "1.0.33"
 
     private static var instance: Pilot?
     private static let instanceLock = NSLock()
