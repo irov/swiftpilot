@@ -42,10 +42,11 @@ public final class Pilot {
 
     private init(config: PilotConfig) {
         self.config = config
-        self.httpClient = PilotHttpClient(baseUrl: config.baseUrl, apiToken: config.apiToken)
+        let client = PilotHttpClient(baseUrl: config.baseUrl, apiToken: config.apiToken)
+        self.httpClient = client
         self.currentActionPollIntervalMs = config.actionPollIntervalMs
 
-        self.liveManager = PilotLiveManager(httpClient: httpClient) { [weak self] enabled, requestedInterval in
+        self.liveManager = PilotLiveManager(httpClient: client) { [weak self] enabled, requestedInterval in
             self?.updateLiveMode(enabled: enabled, requestedPollIntervalMs: requestedInterval)
         }
 
@@ -250,7 +251,7 @@ public final class Pilot {
     // MARK: - In-App Products
 
     public static func setInAppProducts(_ products: [[String: Any]]) {
-        var metadata: [String: Any] = [
+        let metadata: [String: Any] = [
             "pilot_command": "set_in_app_products",
             "pilot_purchase_entry_type": "catalog",
             "in_app_products": products,
