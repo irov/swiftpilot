@@ -4,7 +4,7 @@ import UIKit
 #endif
 
 public final class Pilot {
-    public static let version = "1.0.36"
+    public static let version = "1.0.37"
 
     private static var instance: Pilot?
     private static let instanceLock = NSLock()
@@ -46,6 +46,10 @@ public final class Pilot {
         self.httpClient = client
         self.currentActionPollIntervalMs = config.actionPollIntervalMs
         self.liveManager = PilotLiveManager(httpClient: client)
+
+        self.liveManager.onLiveModeChanged = { [weak self] enabled, intervalMs in
+            self?.handleLiveModeChanged(enabled: enabled, intervalMs: intervalMs)
+        }
 
         PilotLog.setLevel(config.logConfig.logLevel)
         PilotLog.setLoggerListener(config.loggerListener)
@@ -697,6 +701,20 @@ public final class Pilot {
         timer.resume()
         actionPollTimer = timer
         lock.unlock()
+    }
+
+    private func handleLiveModeChanged(enabled: Bool, intervalMs: Int64) {
+        lock.lock()
+        let token = sessionToken
+        lock.unlock()
+
+        guard let token = token else { return }
+
+        if enabled && intervalMs > 0 {
+            scheduleActionPolling(sessionToken: token, intervalMs: intervalMs)
+        } else {
+            scheduleActionPolling(sessionToken: token, intervalMs: config.actionPollIntervalMs)
+        }
     }
 
     private func handleInternalAction(_ action: PilotAction) -> Bool {

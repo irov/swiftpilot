@@ -13,11 +13,15 @@ let package = Package(
             targets: ["PilotSDK"]
         )
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/livekit/client-sdk-swift.git", from: "2.12.0"),
+    ],
     targets: [
         .target(
             name: "PilotSDK",
-            dependencies: [],
+            dependencies: [
+                .product(name: "LiveKit", package: "client-sdk-swift"),
+            ],
             path: "Sources/PilotSDK"
         )
     ]
