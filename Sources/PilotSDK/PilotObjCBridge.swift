@@ -283,6 +283,10 @@ public class PilotBridge: NSObject {
         Pilot.initialize(config)
     }
 
+    public static func initializeWithBuilder(_ builder: PilotObjCConfigBuilder) {
+        Pilot.initialize(builder.build())
+    }
+
     public static func sendLog(_ level: PilotObjCLogLevel, message: String) {
         Pilot.log(level.swift, message)
     }
