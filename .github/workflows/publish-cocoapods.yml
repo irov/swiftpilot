@@ -1,0 +1,20 @@
+name: Publish to CocoaPods
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  lint-and-publish:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate podspec
+        run: pod spec lint PilotSDK.podspec --allow-warnings
+
+      - name: Publish to CocoaPods trunk
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+        run: pod trunk push PilotSDK.podspec --allow-warnings
