@@ -60,7 +60,7 @@ private typealias PilotIOHIDEventCreateDigitizerFingerEventWithQualityProc = @co
 private typealias PilotIOHIDEventAppendEventProc = @convention(c) (PilotIOHIDEventRef?, PilotIOHIDEventRef?) -> Void
 private typealias PilotIOHIDEventSetIntegerValueProc = @convention(c) (PilotIOHIDEventRef?, PilotIOHIDEventField, Int32) -> Void
 
-private enum PilotSyntheticTouchDispatcher {
+enum PilotSyntheticTouchDispatcher {
     struct Target {
         let window: UIWindow
         let hitView: UIView
