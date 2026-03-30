@@ -10,9 +10,22 @@ jobs:
     runs-on: macos-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      PODSPEC_SOURCES: https://cdn.cocoapods.org/,https://github.com/livekit/podspecs.git
+      LIVEKIT_PODSPEC_REPO_NAME: livekit-podspecs
+      LIVEKIT_PODSPEC_REPO_URL: https://github.com/livekit/podspecs.git
     steps:
       - uses: actions/checkout@v4
+
+      - name: Prepare CocoaPods spec repos
+        run: |
+          if [ ! -d "$HOME/.cocoapods/repos/trunk" ]; then
+            pod repo add-cdn trunk https://cdn.cocoapods.org/
+          fi
+
+          if [ -d "$HOME/.cocoapods/repos/${LIVEKIT_PODSPEC_REPO_NAME}" ]; then
+            pod repo update "${LIVEKIT_PODSPEC_REPO_NAME}"
+          else
+            pod repo add "${LIVEKIT_PODSPEC_REPO_NAME}" "${LIVEKIT_PODSPEC_REPO_URL}"
+          fi
 
       - name: Patch CocoaPods validator for Xcode 16 deployment targets
         run: |
@@ -49,9 +62,9 @@ jobs:
           RUBY
 
       - name: Validate podspec
-        run: pod spec lint PilotSDK.podspec --allow-warnings --sources="${PODSPEC_SOURCES}"
+        run: pod spec lint PilotSDK.podspec --allow-warnings
 
       - name: Publish to CocoaPods trunk
         env:
           COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
-        run: pod trunk push PilotSDK.podspec --allow-warnings --sources="${PODSPEC_SOURCES}"
+        run: pod trunk push PilotSDK.podspec --allow-warnings
