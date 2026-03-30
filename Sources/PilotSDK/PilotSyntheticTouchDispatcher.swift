@@ -5,10 +5,12 @@ import ObjectiveC.runtime
 import Darwin
 
 private typealias PilotIOHIDEventRef = OpaquePointer
+private typealias PilotCFAllocatorRef = UnsafeRawPointer?
 private typealias PilotIOOptionBits = UInt32
 private typealias PilotIOHIDDigitizerTransducerType = UInt32
 private typealias PilotIOHIDEventField = UInt32
 private typealias PilotBoolean = UInt8
+private typealias PilotAbsoluteTime = UInt64
 
 #if arch(arm64) || arch(x86_64)
 private typealias PilotIOHIDFloat = Double
@@ -16,13 +18,8 @@ private typealias PilotIOHIDFloat = Double
 private typealias PilotIOHIDFloat = Float
 #endif
 
-private struct PilotAbsoluteTime {
-    var hi: UInt32
-    var lo: UInt32
-}
-
 private typealias PilotIOHIDEventCreateDigitizerEventProc = @convention(c) (
-    CFAllocator?,
+    PilotCFAllocatorRef,
     PilotAbsoluteTime,
     PilotIOHIDDigitizerTransducerType,
     UInt32,
@@ -40,7 +37,7 @@ private typealias PilotIOHIDEventCreateDigitizerEventProc = @convention(c) (
 ) -> PilotIOHIDEventRef?
 
 private typealias PilotIOHIDEventCreateDigitizerFingerEventWithQualityProc = @convention(c) (
-    CFAllocator?,
+    PilotCFAllocatorRef,
     PilotAbsoluteTime,
     UInt32,
     UInt32,
@@ -214,7 +211,7 @@ private enum PilotSyntheticTouchDispatcher {
 
         let timeStamp = absoluteTimeNow()
         let handEvent = createDigitizerEvent(
-            kCFAllocatorDefault,
+            nil,
             timeStamp,
             3,
             0,
@@ -244,7 +241,7 @@ private enum PilotSyntheticTouchDispatcher {
             let eventMask: UInt32 = touch.phase == .moved ? 0x00000004 : (0x00000001 | 0x00000002)
 
             let fingerEvent = createFingerEvent(
-                kCFAllocatorDefault,
+                nil,
                 timeStamp,
                 UInt32(index + 1),
                 2,
@@ -280,16 +277,12 @@ private enum PilotSyntheticTouchDispatcher {
     }
 
     private static func absoluteTimeNow() -> PilotAbsoluteTime {
-        let absoluteTime = mach_absolute_time()
-        return PilotAbsoluteTime(
-            hi: UInt32(absoluteTime >> 32),
-            lo: UInt32(absoluteTime & 0xffffffff)
-        )
+        return mach_absolute_time()
     }
 
     private static func release(_ event: PilotIOHIDEventRef) {
-        let object = unsafeBitCast(event, to: CFTypeRef.self)
-        CFRelease(object)
+        let pointer = UnsafeMutableRawPointer(event)
+        Unmanaged<AnyObject>.fromOpaque(pointer).release()
     }
 
     private final class SyntheticTouch {
@@ -494,25 +487,51 @@ private final class PilotHIDFunctions {
     let setIntegerValue: PilotIOHIDEventSetIntegerValueProc?
 
     private init() {
-        let defaultHandle = UnsafeMutableRawPointer(bitPattern: -2)
-        let symbol = defaultHandle.flatMap { dlsym($0, "IOHIDEventCreateDigitizerEvent") }
-        let handle = symbol != nil
-            ? defaultHandle
+        let defaultSymbol = dlsym(RTLD_DEFAULT, "IOHIDEventCreateDigitizerEvent")
+        let handle = defaultSymbol != nil
+            ? RTLD_DEFAULT
             : dlopen("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_LAZY)
 
-        self.createDigitizerEvent = PilotHIDFunctions.resolve(handle, symbol: "IOHIDEventCreateDigitizerEvent")
-        self.createFingerEvent = PilotHIDFunctions.resolve(handle, symbol: "IOHIDEventCreateDigitizerFingerEventWithQuality")
-        self.appendEvent = PilotHIDFunctions.resolve(handle, symbol: "IOHIDEventAppendEvent")
-        self.setIntegerValue = PilotHIDFunctions.resolve(handle, symbol: "IOHIDEventSetIntegerValue")
+        self.createDigitizerEvent = PilotHIDFunctions.resolveCreateDigitizerEvent(handle)
+        self.createFingerEvent = PilotHIDFunctions.resolveCreateFingerEvent(handle)
+        self.appendEvent = PilotHIDFunctions.resolveAppendEvent(handle)
+        self.setIntegerValue = PilotHIDFunctions.resolveSetIntegerValue(handle)
     }
 
-    private static func resolve<T>(_ handle: UnsafeMutableRawPointer?, symbol: String) -> T? {
+    private static func resolveCreateDigitizerEvent(_ handle: UnsafeMutableRawPointer?) -> PilotIOHIDEventCreateDigitizerEventProc? {
         guard let handle,
-              let address = dlsym(handle, symbol) else {
+              let address = dlsym(handle, "IOHIDEventCreateDigitizerEvent") else {
             return nil
         }
 
-        return unsafeBitCast(address, to: T.self)
+        return unsafeBitCast(address, to: PilotIOHIDEventCreateDigitizerEventProc.self)
+    }
+
+    private static func resolveCreateFingerEvent(_ handle: UnsafeMutableRawPointer?) -> PilotIOHIDEventCreateDigitizerFingerEventWithQualityProc? {
+        guard let handle,
+              let address = dlsym(handle, "IOHIDEventCreateDigitizerFingerEventWithQuality") else {
+            return nil
+        }
+
+        return unsafeBitCast(address, to: PilotIOHIDEventCreateDigitizerFingerEventWithQualityProc.self)
+    }
+
+    private static func resolveAppendEvent(_ handle: UnsafeMutableRawPointer?) -> PilotIOHIDEventAppendEventProc? {
+        guard let handle,
+              let address = dlsym(handle, "IOHIDEventAppendEvent") else {
+            return nil
+        }
+
+        return unsafeBitCast(address, to: PilotIOHIDEventAppendEventProc.self)
+    }
+
+    private static func resolveSetIntegerValue(_ handle: UnsafeMutableRawPointer?) -> PilotIOHIDEventSetIntegerValueProc? {
+        guard let handle,
+              let address = dlsym(handle, "IOHIDEventSetIntegerValue") else {
+            return nil
+        }
+
+        return unsafeBitCast(address, to: PilotIOHIDEventSetIntegerValueProc.self)
     }
 }
 #endif
