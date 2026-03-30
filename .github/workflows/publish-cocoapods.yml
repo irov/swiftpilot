@@ -1,4 +1,4 @@
-name: Publish to CocoaPods
+name: Publish to CocoaPods Spec Repo
 
 on:
   push:
@@ -9,12 +9,19 @@ jobs:
   lint-and-publish:
     runs-on: macos-latest
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      PODSPEC_SOURCES: https://cdn.cocoapods.org/,https://github.com/livekit/podspecs.git
+      LINT_PODSPEC_SOURCES: https://cdn.cocoapods.org/,https://github.com/livekit/podspecs.git
       LIVEKIT_PODSPEC_REPO_NAME: livekit-podspecs
       LIVEKIT_PODSPEC_REPO_URL: https://github.com/livekit/podspecs.git
+      PILOT_PODSPEC_REPO_NAME: swiftpilot-podspecs
+      PILOT_PODSPEC_REPO_URL: https://github.com/irov/swiftpilot-podspecs.git
+      PILOT_PODSPEC_PAT_SECRET_NAME: SWIFTPILOT_PODSPEC_REPO_PAT
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Prepare CocoaPods spec repos
         run: |
@@ -63,9 +70,26 @@ jobs:
           RUBY
 
       - name: Validate podspec
-        run: pod spec lint PilotSDK.podspec --allow-warnings --sources="${PODSPEC_SOURCES}"
+        run: pod spec lint PilotSDK.podspec --allow-warnings --sources="${LINT_PODSPEC_SOURCES}"
 
-      - name: Publish to CocoaPods trunk
-        env:
-          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
-        run: pod trunk push PilotSDK.podspec --allow-warnings
+      - name: Publish to swiftpilot podspec repo
+        run: |
+          SWIFTPILOT_PODSPEC_REPO_PAT="${{ secrets[env.PILOT_PODSPEC_PAT_SECRET_NAME] }}"
+
+          if [ -z "${SWIFTPILOT_PODSPEC_REPO_PAT}" ]; then
+            echo "::warning::SWIFTPILOT_PODSPEC_REPO_PAT is not configured; skipping podspec repo publish."
+            exit 0
+          fi
+
+          PUSH_URL="https://x-access-token:${SWIFTPILOT_PODSPEC_REPO_PAT}@github.com/irov/swiftpilot-podspecs.git"
+
+          if [ -d "$HOME/.cocoapods/repos/${PILOT_PODSPEC_REPO_NAME}" ]; then
+            git -C "$HOME/.cocoapods/repos/${PILOT_PODSPEC_REPO_NAME}" remote set-url origin "${PUSH_URL}"
+            pod repo update "${PILOT_PODSPEC_REPO_NAME}"
+          else
+            pod repo add "${PILOT_PODSPEC_REPO_NAME}" "${PUSH_URL}"
+          fi
+
+          pod repo push "${PILOT_PODSPEC_REPO_NAME}" PilotSDK.podspec \
+            --sources="${LINT_PODSPEC_SOURCES},${PILOT_PODSPEC_REPO_URL}" \
+            --allow-warnings

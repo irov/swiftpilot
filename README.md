@@ -23,6 +23,7 @@ Lightweight Swift SDK for connecting iOS applications to the **Pilot** remote de
 ```ruby
 source "https://cdn.cocoapods.org/"
 source "https://github.com/livekit/podspecs.git"
+source "https://github.com/irov/swiftpilot-podspecs.git"
 
 platform :ios, "13.0"
 
@@ -32,7 +33,7 @@ end
 ```
 
 `PilotSDK` still installs `LiveKitClient` `2.12.1` transitively, so you do not need a separate `pod "LiveKitClient"` entry.
-The extra `source` line is required because recent LiveKit CocoaPods specs are published in the LiveKit spec repo instead of CocoaPods trunk.
+All three `source` entries are required: `PilotSDK` is published in `irov/swiftpilot-podspecs`, while recent LiveKit CocoaPods specs are published in the LiveKit spec repo instead of trunk.
 
 ## Quick Start
 

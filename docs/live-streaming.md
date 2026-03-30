@@ -1,6 +1,6 @@
 # Live Streaming
 
-> **Note:** iOS live streaming is implemented with ReplayKit + LiveKit. If you install the SDK via CocoaPods, add both spec sources described in [ios-integration.md](ios-integration.md) so CocoaPods can resolve the current LiveKit pods.
+> **Note:** iOS live streaming is implemented with ReplayKit + LiveKit. If you install the SDK via CocoaPods, add all three source entries described in [ios-integration.md](ios-integration.md) so CocoaPods can resolve both `PilotSDK` and the current LiveKit pods.
 
 ## How It Works
 

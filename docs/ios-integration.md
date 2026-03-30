@@ -7,6 +7,7 @@
 ```ruby
 source "https://cdn.cocoapods.org/"
 source "https://github.com/livekit/podspecs.git"
+source "https://github.com/irov/swiftpilot-podspecs.git"
 
 platform :ios, "13.0"
 
@@ -16,7 +17,7 @@ end
 ```
 
 `PilotSDK` still pulls `LiveKitClient` `2.12.1` transitively, so you do not need to add a separate `pod "LiveKitClient"` line.
-The two `source` entries are required because recent LiveKit CocoaPods specs are published in the LiveKit spec repo instead of CocoaPods trunk.
+All three `source` entries are required: `PilotSDK` is published in `irov/swiftpilot-podspecs`, while recent LiveKit CocoaPods specs are published in the LiveKit spec repo instead of CocoaPods trunk.
 
 ## Basic Setup
 
