@@ -13,14 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add LiveKit podspec repo
-        run: pod repo add livekit https://github.com/livekit/podspecs.git
-
-      - name: Add CocoaPods CDN trunk repo
-        run: pod repo add-cdn trunk https://cdn.cocoapods.org/
-
       - name: Validate podspec
-        run: pod spec lint PilotSDK.podspec --allow-warnings --sources='livekit,trunk'
+        run: pod spec lint PilotSDK.podspec --allow-warnings
 
       - name: Publish to CocoaPods trunk
         env:
