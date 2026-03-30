@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'PilotSDK'
-  s.version          = '1.0.40'
+  s.version          = '1.0.41'
   s.summary          = 'Pilot remote debugging SDK for iOS'
   s.description      = <<-DESC
     PilotSDK provides real-time remote debugging, logging, metrics collection,
@@ -19,5 +19,5 @@ Pod::Spec.new do |s|
 
   s.frameworks = 'Foundation'
   s.ios.frameworks = 'UIKit', 'ReplayKit'
-  s.weak_frameworks = 'LiveKit'
+  s.ios.dependency 'LiveKitClient', '2.0.18'
 end

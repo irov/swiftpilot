@@ -30,6 +30,14 @@ dependencies: [
 
 Or in Xcode: **File → Add Package Dependencies** → enter the repository URL.
 
+### CocoaPods
+
+```ruby
+pod 'PilotSDK', '~> 1.0'
+```
+
+`LiveKitClient` is installed automatically as a transitive dependency of `PilotSDK`.
+
 ## Quick Start
 
 ```swift
