@@ -11,7 +11,6 @@ public final class PilotConfig {
     public weak var loggerListener: PilotLoggerListener?
     public weak var sessionListener: PilotSessionListener?
     public weak var actionListener: PilotActionListener?
-    public weak var liveInputListener: PilotLiveInputListener?
     public let sessionAttributes: PilotSessionAttributes
     public let logConfig: PilotLogConfig
     public let metricConfig: PilotMetricConfig
@@ -27,7 +26,6 @@ public final class PilotConfig {
         self.loggerListener = builder.loggerListener
         self.sessionListener = builder.sessionListener
         self.actionListener = builder.actionListener
-        self.liveInputListener = builder.liveInputListener
         self.sessionAttributes = builder.sessionAttributes
         self.logConfig = builder.logConfig
         self.metricConfig = builder.metricConfig
@@ -44,7 +42,6 @@ public final class PilotConfig {
         fileprivate weak var loggerListener: PilotLoggerListener?
         fileprivate weak var sessionListener: PilotSessionListener?
         fileprivate weak var actionListener: PilotActionListener?
-        fileprivate weak var liveInputListener: PilotLiveInputListener?
         fileprivate var sessionAttributes = PilotSessionAttributes()
         fileprivate var logConfig = PilotLogConfig()
         fileprivate var metricConfig = PilotMetricConfig()
@@ -99,12 +96,6 @@ public final class PilotConfig {
         @discardableResult
         public func setActionListener(_ listener: PilotActionListener?) -> Builder {
             self.actionListener = listener
-            return self
-        }
-
-        @discardableResult
-        public func setLiveInputListener(_ listener: PilotLiveInputListener?) -> Builder {
-            self.liveInputListener = listener
             return self
         }
 

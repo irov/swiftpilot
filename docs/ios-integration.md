@@ -42,29 +42,11 @@ Pilot.initialize(config)
 
 If `deviceId` or `deviceName` are not set, the SDK auto-detects them from `UIDevice`.
 
-## Live Input for Custom Renderers
+## Live Input
 
-If your app uses a custom renderer or engine surface instead of regular UIKit controls, register a `PilotLiveInputListener` and forward remote taps into your own input system.
+On iOS, `LIVE_TAP` and `LIVE_LONG_PRESS` are dispatched as synthetic touches into the active application window.
 
-```swift
-final class GameLiveInput: PilotLiveInputListener {
-    func onPilotLiveTap(normalizedX: Double, normalizedY: Double) -> Bool {
-        game.injectTap(x: normalizedX, y: normalizedY)
-        return true
-    }
-
-    func onPilotLiveLongPress(normalizedX: Double, normalizedY: Double, durationMs: Int) -> Bool {
-        game.injectLongPress(x: normalizedX, y: normalizedY, durationMs: durationMs)
-        return true
-    }
-}
-
-let config = PilotConfig.Builder(url, token)
-    .setLiveInputListener(GameLiveInput())
-    .build()
-```
-
-For Objective-C / Objective-C++ hosts, the bridge exposes `PilotObjCLiveInputDelegate` through `setLiveInputListener:` on `PilotConfigBuilder`.
+That means your existing UIKit or engine touch pipeline can intercept remote input without any extra integration code in the host app.
 
 ### 3. Auto-connect vs Manual
 

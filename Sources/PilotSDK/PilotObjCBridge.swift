@@ -64,14 +64,6 @@ public protocol PilotObjCActionDelegate {
     @objc func onPilotActionReceived(_ actionId: String, widgetId: Int, actionType: String)
 }
 
-@objc(PilotObjCLiveInputDelegate)
-public protocol PilotObjCLiveInputDelegate {
-    @objc optional func onPilotLiveTap(_ normalizedX: Double, normalizedY: Double) -> Bool
-    @objc optional func onPilotLiveLongPress(_ normalizedX: Double,
-                                             normalizedY: Double,
-                                             durationMs: Int) -> Bool
-}
-
 @objc(PilotObjCLoggerDelegate)
 public protocol PilotObjCLoggerDelegate {
     @objc func onPilotLoggerMessage(_ level: PilotObjCLogLevel, tag: String, message: String)
@@ -124,22 +116,6 @@ private class ActionDelegateAdapter: PilotActionListener {
 
     func onPilotActionReceived(_ action: PilotAction) {
         delegate?.onPilotActionReceived(action.id, widgetId: action.widgetId, actionType: action.actionType.rawValue)
-    }
-}
-
-private class LiveInputDelegateAdapter: PilotLiveInputListener {
-    weak var delegate: PilotObjCLiveInputDelegate?
-
-    init(_ delegate: PilotObjCLiveInputDelegate) {
-        self.delegate = delegate
-    }
-
-    func onPilotLiveTap(normalizedX: Double, normalizedY: Double) -> Bool {
-        return delegate?.onPilotLiveTap?(normalizedX, normalizedY: normalizedY) ?? false
-    }
-
-    func onPilotLiveLongPress(normalizedX: Double, normalizedY: Double, durationMs: Int) -> Bool {
-        return delegate?.onPilotLiveLongPress?(normalizedX, normalizedY: normalizedY, durationMs: durationMs) ?? false
     }
 }
 
@@ -270,14 +246,6 @@ public class PilotObjCConfigBuilder: NSObject {
     }
 
     @discardableResult
-    public func setLiveInputListener(_ listener: PilotObjCLiveInputDelegate) -> PilotObjCConfigBuilder {
-        let adapter = LiveInputDelegateAdapter(listener)
-        PilotBridge.liveInputAdapter = adapter
-        builder.setLiveInputListener(adapter)
-        return self
-    }
-
-    @discardableResult
     public func setSessionAttributes(_ attributes: PilotObjCSessionAttributeBuilder) -> PilotObjCConfigBuilder {
         builder.setSessionAttributes(attributes.attrs)
         return self
@@ -308,7 +276,6 @@ public class PilotBridge: NSObject {
     fileprivate static var sessionAdapter: SessionDelegateAdapter?
     fileprivate static var actionAdapter: ActionDelegateAdapter?
     fileprivate static var loggerAdapter: LoggerDelegateAdapter?
-    fileprivate static var liveInputAdapter: LiveInputDelegateAdapter?
 
     public static let sdkVersion: String = Pilot.version
 
@@ -368,7 +335,6 @@ public class PilotBridge: NSObject {
         sessionAdapter = nil
         actionAdapter = nil
         loggerAdapter = nil
-        liveInputAdapter = nil
     }
 
     public static func getStatus() -> PilotObjCSessionStatus {

@@ -19,46 +19,9 @@
 
 ## Remote Touch on iOS
 
-On iOS, the SDK draws an in-app touch indicator overlay for remote taps and long presses.
+On iOS, the SDK draws an in-app touch indicator overlay for remote taps and long presses and injects a synthetic touch into the active application window.
 
-If your app uses regular UIKit controls, the SDK can still fall back to `UIControl` actions.
-If your app renders into a custom surface or engine view, register a live input listener and inject the touch into your own input pipeline.
-
-Swift:
-
-```swift
-final class GameLiveInput: PilotLiveInputListener {
-	func onPilotLiveTap(normalizedX: Double, normalizedY: Double) -> Bool {
-		game.injectTap(x: normalizedX, y: normalizedY)
-		return true
-	}
-
-	func onPilotLiveLongPress(normalizedX: Double, normalizedY: Double, durationMs: Int) -> Bool {
-		game.injectLongPress(x: normalizedX, y: normalizedY, durationMs: durationMs)
-		return true
-	}
-}
-
-let config = PilotConfig.Builder(url, token)
-	.setLiveInputListener(GameLiveInput())
-	.build()
-```
-
-Objective-C bridge:
-
-```objective-c
-[config setLiveInputListener:self];
-
-- (BOOL)onPilotLiveTap:(double)normalizedX normalizedY:(double)normalizedY {
-	return YES;
-}
-
-- (BOOL)onPilotLiveLongPress:(double)normalizedX normalizedY:(double)normalizedY durationMs:(NSInteger)durationMs {
-	return YES;
-}
-```
-
-Return `YES` / `true` when your app handled the remote touch itself. In that case the SDK skips the UIKit `UIControl` fallback.
+The touch goes through normal UIKit hit-testing, so regular controls, engine canvases, and in-app system overlays can intercept it through the same touch handling path they already use locally.
 
 ## Action Types
 
