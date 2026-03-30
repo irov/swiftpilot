@@ -1,5 +1,5 @@
 import Foundation
-import LiveKit
+import LiveKitClient
 
 final class PilotLiveKitPublisher {
     private var room: Room?
