@@ -487,9 +487,10 @@ private final class PilotHIDFunctions {
     let setIntegerValue: PilotIOHIDEventSetIntegerValueProc?
 
     private init() {
-        let defaultSymbol = dlsym(RTLD_DEFAULT, "IOHIDEventCreateDigitizerEvent")
+        let rtldDefault = UnsafeMutableRawPointer(bitPattern: -2)
+        let defaultSymbol = dlsym(rtldDefault, "IOHIDEventCreateDigitizerEvent")
         let handle = defaultSymbol != nil
-            ? RTLD_DEFAULT
+            ? rtldDefault
             : dlopen("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_LAZY)
 
         self.createDigitizerEvent = PilotHIDFunctions.resolveCreateDigitizerEvent(handle)
