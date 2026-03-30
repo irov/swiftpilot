@@ -18,18 +18,6 @@ Lightweight Swift SDK for connecting iOS applications to the **Pilot** remote de
 
 ## Installation
 
-### Swift Package Manager
-
-Add the package to your `Package.swift`:
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/irov/swiftpilot.git", from: "1.0.0")
-]
-```
-
-Or in Xcode: **File → Add Package Dependencies** → enter the repository URL.
-
 ### CocoaPods
 
 ```ruby
@@ -43,7 +31,7 @@ target "MyApp" do
 end
 ```
 
-`PilotSDK` still installs `LiveKitClient` transitively, so you do not need a separate `pod "LiveKitClient"` entry.
+`PilotSDK` still installs `LiveKitClient` `2.12.1` transitively, so you do not need a separate `pod "LiveKitClient"` entry.
 The extra `source` line is required because recent LiveKit CocoaPods specs are published in the LiveKit spec repo instead of CocoaPods trunk.
 
 ## Quick Start

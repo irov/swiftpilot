@@ -2,18 +2,6 @@
 
 ## Installation
 
-### Swift Package Manager (recommended)
-
-Add to your `Package.swift`:
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/irov/swiftpilot.git", from: "1.0.0")
-]
-```
-
-Or in Xcode: **File → Add Package Dependencies** → paste the repository URL.
-
 ### CocoaPods
 
 ```ruby
@@ -27,7 +15,7 @@ target "MyApp" do
 end
 ```
 
-`PilotSDK` still pulls `LiveKitClient` transitively, so you do not need to add a separate `pod "LiveKitClient"` line.
+`PilotSDK` still pulls `LiveKitClient` `2.12.1` transitively, so you do not need to add a separate `pod "LiveKitClient"` line.
 The two `source` entries are required because recent LiveKit CocoaPods specs are published in the LiveKit spec repo instead of CocoaPods trunk.
 
 ## Basic Setup
