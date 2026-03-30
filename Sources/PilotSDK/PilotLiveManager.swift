@@ -5,11 +5,15 @@ import UIKit
 
 final class PilotLiveManager {
     var onLiveModeChanged: ((Bool, Int64) -> Void)?
+    weak var liveInputListener: PilotLiveInputListener?
 
     private let httpClient: PilotHttpClient
     private let lock = NSLock()
     private var isLive = false
     private let publisher = PilotLiveKitPublisher()
+#if os(iOS)
+    private weak var overlayView: PilotLiveOverlayView?
+#endif
 
     init(httpClient: PilotHttpClient) {
         self.httpClient = httpClient
@@ -174,6 +178,12 @@ final class PilotLiveManager {
         isLive = false
         lock.unlock()
         publisher.stop()
+
+        #if os(iOS)
+        DispatchQueue.main.async { [weak self] in
+            self?.detachOverlay()
+        }
+        #endif
     }
 
     private func fetchPublisherSession(sessionToken: String,
@@ -218,12 +228,21 @@ final class PilotLiveManager {
 
     #if os(iOS)
     private func performTap(normalizedX: Double, normalizedY: Double) {
-        guard let window = getKeyWindow() else { return }
-        let x = CGFloat(normalizedX) * window.bounds.width
-        let y = CGFloat(normalizedY) * window.bounds.height
-        let point = CGPoint(x: x, y: y)
+        guard let window = getKeyWindow(),
+              let touchPoint = resolveTouchPoint(in: window, normalizedX: normalizedX,
+                                                 normalizedY: normalizedY) else {
+            return
+        }
 
-        guard let hitView = window.hitTest(point, with: nil) else { return }
+        let overlay = attachOverlay(to: window)
+        overlay.showTap(at: touchPoint.point)
+
+        let wasHandled = liveInputListener?.onPilotLiveTap(normalizedX: touchPoint.normalizedX,
+                                                           normalizedY: touchPoint.normalizedY) ?? false
+        guard !wasHandled,
+              let hitView = window.hitTest(touchPoint.point, with: nil) else {
+            return
+        }
 
         if let control = findControl(from: hitView) {
             control.sendActions(for: .touchUpInside)
@@ -231,19 +250,47 @@ final class PilotLiveManager {
     }
 
     private func performLongPress(normalizedX: Double, normalizedY: Double, durationMs: Int) {
-        guard let window = getKeyWindow() else { return }
-        let x = CGFloat(normalizedX) * window.bounds.width
-        let y = CGFloat(normalizedY) * window.bounds.height
-        let point = CGPoint(x: x, y: y)
+        guard let window = getKeyWindow(),
+              let touchPoint = resolveTouchPoint(in: window, normalizedX: normalizedX,
+                                                 normalizedY: normalizedY) else {
+            return
+        }
 
-        guard let hitView = window.hitTest(point, with: nil) else { return }
+        let overlay = attachOverlay(to: window)
+        overlay.showPress(at: touchPoint.point)
+
+        let wasHandled = liveInputListener?.onPilotLiveLongPress(normalizedX: touchPoint.normalizedX,
+                                                                 normalizedY: touchPoint.normalizedY,
+                                                                 durationMs: durationMs) ?? false
+        guard !wasHandled,
+              let hitView = window.hitTest(touchPoint.point, with: nil) else {
+            return
+        }
 
         if let control = findControl(from: hitView) {
             control.sendActions(for: .touchDown)
             DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(durationMs)) {
+                overlay.showRelease(at: touchPoint.point)
                 control.sendActions(for: .touchUpInside)
             }
         }
+    }
+
+    private func resolveTouchPoint(in window: UIWindow,
+                                   normalizedX: Double,
+                                   normalizedY: Double) -> TouchPoint? {
+        guard window.bounds.width > 0, window.bounds.height > 0 else {
+            return nil
+        }
+
+        let clampedX = clampD(normalizedX, 0, 1)
+        let clampedY = clampD(normalizedY, 0, 1)
+        let point = CGPoint(
+            x: CGFloat(clampedX) * window.bounds.width,
+            y: CGFloat(clampedY) * window.bounds.height
+        )
+
+        return TouchPoint(point: point, normalizedX: clampedX, normalizedY: clampedY)
     }
 
     private func findControl(from view: UIView) -> UIControl? {
@@ -266,6 +313,33 @@ final class PilotLiveManager {
         } else {
             return UIApplication.shared.windows.first { $0.isKeyWindow }
         }
+    }
+
+    private func attachOverlay(to window: UIWindow) -> PilotLiveOverlayView {
+        if let overlayView = overlayView, overlayView.superview === window {
+            overlayView.frame = window.bounds
+            return overlayView
+        }
+
+        overlayView?.removeFromSuperview()
+
+        let overlay = PilotLiveOverlayView(frame: window.bounds)
+        overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        window.addSubview(overlay)
+        overlayView = overlay
+        return overlay
+    }
+
+    private func detachOverlay() {
+        overlayView?.clearIndicator()
+        overlayView?.removeFromSuperview()
+        overlayView = nil
+    }
+
+    private struct TouchPoint {
+        let point: CGPoint
+        let normalizedX: Double
+        let normalizedY: Double
     }
     #endif
 

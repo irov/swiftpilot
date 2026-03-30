@@ -4,7 +4,7 @@ import UIKit
 #endif
 
 public final class Pilot {
-    public static let version = "1.0.49"
+    public static let version = "1.0.50"
 
     private static var instance: Pilot?
     private static let instanceLock = NSLock()
@@ -46,6 +46,7 @@ public final class Pilot {
         self.httpClient = client
         self.currentActionPollIntervalMs = config.actionPollIntervalMs
         self.liveManager = PilotLiveManager(httpClient: client)
+        self.liveManager.liveInputListener = config.liveInputListener
 
         self.liveManager.onLiveModeChanged = { [weak self] enabled, intervalMs in
             self?.handleLiveModeChanged(enabled: enabled, intervalMs: intervalMs)

@@ -42,6 +42,30 @@ Pilot.initialize(config)
 
 If `deviceId` or `deviceName` are not set, the SDK auto-detects them from `UIDevice`.
 
+## Live Input for Custom Renderers
+
+If your app uses a custom renderer or engine surface instead of regular UIKit controls, register a `PilotLiveInputListener` and forward remote taps into your own input system.
+
+```swift
+final class GameLiveInput: PilotLiveInputListener {
+    func onPilotLiveTap(normalizedX: Double, normalizedY: Double) -> Bool {
+        game.injectTap(x: normalizedX, y: normalizedY)
+        return true
+    }
+
+    func onPilotLiveLongPress(normalizedX: Double, normalizedY: Double, durationMs: Int) -> Bool {
+        game.injectLongPress(x: normalizedX, y: normalizedY, durationMs: durationMs)
+        return true
+    }
+}
+
+let config = PilotConfig.Builder(url, token)
+    .setLiveInputListener(GameLiveInput())
+    .build()
+```
+
+For Objective-C / Objective-C++ hosts, the bridge exposes `PilotObjCLiveInputDelegate` through `setLiveInputListener:` on `PilotConfigBuilder`.
+
 ### 3. Auto-connect vs Manual
 
 By default `autoConnect` is `true` — the SDK connects immediately after `initialize()`.

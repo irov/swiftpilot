@@ -7,7 +7,7 @@ Lightweight Swift SDK for connecting iOS applications to the **Pilot** remote de
 - **Remote UI** — Declarative panel builder with widgets (buttons, switches, inputs, tables, etc.)
 - **Structured Logging** — Buffered log pipeline with categories, metadata, and custom attributes
 - **Metrics** — System metrics (memory, threads, battery) + custom metric collectors
-- **Live Streaming** — Screen broadcast via LiveKit/WebRTC
+- **Live Streaming** — Screen broadcast via LiveKit/WebRTC with remote tap/long-press input and in-app touch overlay
 - **Events & Revenue** — Structured event and purchase tracking
 
 ## Requirements
