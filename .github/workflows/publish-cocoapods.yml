@@ -70,7 +70,25 @@ jobs:
           RUBY
 
       - name: Validate podspec
-        run: pod spec lint PilotSDK.podspec --allow-warnings --sources="${LINT_PODSPEC_SOURCES}"
+        run: |
+          set -o pipefail
+
+          if ! pod spec lint PilotSDK.podspec --allow-warnings --verbose --sources="${LINT_PODSPEC_SOURCES}" 2>&1 | tee pod-spec-lint.log; then
+            extracted_errors=$(ruby <<'RUBY'
+          log = File.exist?('pod-spec-lint.log') ? File.read('pod-spec-lint.log') : ''
+          lines = log.lines.select do |line|
+            line.include?(' - ERROR |') || line.include?(' error: ')
+          end
+          lines = lines.last(20)
+          text = lines.empty? ? 'pod spec lint failed without matched error lines' : lines.join
+          text = text.gsub('%', '%25').gsub("\r", '%0D').gsub("\n", '%0A')
+          puts text
+          RUBY
+            )
+
+            echo "::error::${extracted_errors}"
+            exit 1
+          fi
 
       - name: Publish to swiftpilot podspec repo
         run: |
