@@ -1,8 +1,8 @@
 # Live Streaming
 
-> **Note:** Live streaming support for iOS is planned and requires integration with the [LiveKit Swift SDK](https://github.com/livekit/client-sdk-swift). The current SDK includes a placeholder implementation.
+> **Note:** iOS live streaming is implemented with ReplayKit + LiveKit. If you install the SDK via CocoaPods, add both spec sources described in [ios-integration.md](ios-integration.md) so CocoaPods can resolve the current LiveKit pods.
 
-## How It Works (planned)
+## How It Works
 
 1. Dashboard user clicks "Start Stream" → `LIVE_START` action sent to SDK
 2. SDK requests screen recording permission via `ReplayKit`

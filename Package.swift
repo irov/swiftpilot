@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/livekit/client-sdk-swift.git", from: "2.0.18"),
+        .package(url: "https://github.com/livekit/client-sdk-swift.git", from: "2.12.1"),
     ],
     targets: [
         .target(

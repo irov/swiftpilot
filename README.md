@@ -7,7 +7,7 @@ Lightweight Swift SDK for connecting iOS applications to the **Pilot** remote de
 - **Remote UI** — Declarative panel builder with widgets (buttons, switches, inputs, tables, etc.)
 - **Structured Logging** — Buffered log pipeline with categories, metadata, and custom attributes
 - **Metrics** — System metrics (memory, threads, battery) + custom metric collectors
-- **Live Streaming** — Screen broadcast via LiveKit/WebRTC *(coming soon)*
+- **Live Streaming** — Screen broadcast via LiveKit/WebRTC
 - **Events & Revenue** — Structured event and purchase tracking
 
 ## Requirements
@@ -33,10 +33,18 @@ Or in Xcode: **File → Add Package Dependencies** → enter the repository URL.
 ### CocoaPods
 
 ```ruby
-pod 'PilotSDK', '~> 1.0'
+source "https://cdn.cocoapods.org/"
+source "https://github.com/livekit/podspecs.git"
+
+platform :ios, "13.0"
+
+target "MyApp" do
+    pod "PilotSDK", "~> 1.0"
+end
 ```
 
-`LiveKitClient` is installed automatically as a transitive dependency of `PilotSDK`.
+`PilotSDK` still installs `LiveKitClient` transitively, so you do not need a separate `pod "LiveKitClient"` entry.
+The extra `source` line is required because recent LiveKit CocoaPods specs are published in the LiveKit spec repo instead of CocoaPods trunk.
 
 ## Quick Start
 

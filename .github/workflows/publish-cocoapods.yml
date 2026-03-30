@@ -10,6 +10,7 @@ jobs:
     runs-on: macos-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      PODSPEC_SOURCES: https://cdn.cocoapods.org/,https://github.com/livekit/podspecs.git
     steps:
       - uses: actions/checkout@v4
 
@@ -48,9 +49,9 @@ jobs:
           RUBY
 
       - name: Validate podspec
-        run: pod spec lint PilotSDK.podspec --allow-warnings
+        run: pod spec lint PilotSDK.podspec --allow-warnings --sources="${PODSPEC_SOURCES}"
 
       - name: Publish to CocoaPods trunk
         env:
           COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
-        run: pod trunk push PilotSDK.podspec --allow-warnings
+        run: pod trunk push PilotSDK.podspec --allow-warnings --sources="${PODSPEC_SOURCES}"

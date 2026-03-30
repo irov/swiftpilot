@@ -17,10 +17,18 @@ Or in Xcode: **File → Add Package Dependencies** → paste the repository URL.
 ### CocoaPods
 
 ```ruby
-pod 'PilotSDK', '~> 1.0'
+source "https://cdn.cocoapods.org/"
+source "https://github.com/livekit/podspecs.git"
+
+platform :ios, "13.0"
+
+target "MyApp" do
+    pod "PilotSDK", "~> 1.0"
+end
 ```
 
-`LiveKitClient` is installed automatically as a transitive dependency of `PilotSDK`.
+`PilotSDK` still pulls `LiveKitClient` transitively, so you do not need to add a separate `pod "LiveKitClient"` line.
+The two `source` entries are required because recent LiveKit CocoaPods specs are published in the LiveKit spec repo instead of CocoaPods trunk.
 
 ## Basic Setup
 
