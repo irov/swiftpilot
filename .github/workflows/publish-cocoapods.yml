@@ -13,6 +13,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Patch CocoaPods validator for Xcode 16 deployment targets
+        run: |
+          ruby <<'RUBY'
+          require 'rubygems'
+
+          gem_dir = Gem::Specification.find_by_name('cocoapods').gem_dir
+          validator_path = File.join(gem_dir, 'lib/cocoapods/validator.rb')
+          analyzer_path = File.join(gem_dir, 'lib/cocoapods/installer/analyzer.rb')
+
+          validator = File.read(validator_path)
+          validator_target_bump = validator.sub!(/minimum = Version\.new\('8\.0'\)/, "minimum = Version.new('12.0')")
+          validator_flags_patch = validator.sub!(
+            /(\(build_configuration\.build_settings\['OTHER_CFLAGS'\] \|\|= '\$\(inherited\)'\) << ' -Wincomplete-umbrella')/,
+            "\\1\n          build_configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0' if consumer.platform_name == :ios"
+          )
+          validator_swift_patch_count = validator.gsub!(
+            /(build_configuration\.build_settings\['SWIFT_VERSION'\] = swift_version)/,
+            "build_configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0' if consumer.platform_name == :ios\n              \\1"
+          )
+          raise 'Failed to patch CocoaPods validator deployment target minimum' unless validator_target_bump
+          raise 'Failed to patch CocoaPods validator OTHER_CFLAGS section' unless validator_flags_patch
+          raise 'Failed to patch CocoaPods validator SWIFT_VERSION sections' unless validator_swift_patch_count
+          File.write(validator_path, validator)
+
+          analyzer = File.read(analyzer_path)
+          analyzer_patch = analyzer.sub!(/minimum = Version\.new\('8\.0'\)/, "minimum = Version.new('12.0')")
+          raise 'Failed to patch CocoaPods analyzer deployment target minimum' unless analyzer_patch
+          File.write(analyzer_path, analyzer)
+
+          puts "Patched CocoaPods in #{gem_dir}"
+          RUBY
+
       - name: Validate podspec
         run: pod spec lint PilotSDK.podspec --allow-warnings
 
