@@ -9,10 +9,7 @@ final class PilotLiveManager {
     private let httpClient: PilotHttpClient
     private let lock = NSLock()
     private var isLive = false
-
-    #if canImport(LiveKit) && os(iOS)
     private let publisher = PilotLiveKitPublisher()
-    #endif
 
     init(httpClient: PilotHttpClient) {
         self.httpClient = httpClient
@@ -21,7 +18,6 @@ final class PilotLiveManager {
     // MARK: - Public API
 
     func start(sessionToken: String, payload: [String: Any]?) -> [String: Any] {
-        #if canImport(LiveKit) && os(iOS)
         lock.lock()
         let wasLive = isLive
         lock.unlock()
@@ -85,9 +81,6 @@ final class PilotLiveManager {
             ])
             return buildAck(ok: false, status: error.localizedDescription)
         }
-        #else
-        return buildAck(ok: false, status: "Live streaming requires LiveKit SDK on iOS")
-        #endif
     }
 
     func stop() -> [String: Any] {
@@ -180,10 +173,7 @@ final class PilotLiveManager {
         lock.lock()
         isLive = false
         lock.unlock()
-
-        #if canImport(LiveKit) && os(iOS)
         publisher.stop()
-        #endif
     }
 
     private func fetchPublisherSession(sessionToken: String,

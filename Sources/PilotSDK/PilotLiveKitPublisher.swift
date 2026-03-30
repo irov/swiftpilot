@@ -1,4 +1,3 @@
-#if canImport(LiveKit) && os(iOS)
 import Foundation
 import LiveKit
 
@@ -92,4 +91,3 @@ final class PilotLiveKitPublisher {
         semaphore.wait()
     }
 }
-#endif
