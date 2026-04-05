@@ -4,7 +4,7 @@ import UIKit
 #endif
 
 public final class Pilot {
-    public static let version = "1.0.56"
+    public static let version = "1.0.57"
 
     private static var instance: Pilot?
     private static let instanceLock = NSLock()
@@ -450,8 +450,18 @@ public final class Pilot {
                     return
                 }
 
+                if !error.isNetworkError {
+                    PilotLog.e("Server error, stopping connection: %@", error.message)
+                    setStatus(.error)
+                    lock.lock()
+                    running = false
+                    lock.unlock()
+                    notifyError(error)
+                    return
+                }
+
                 retryCount += 1
-                PilotLog.w("Connection attempt %d failed: %@, retrying in %lldms",
+                PilotLog.w("Connection attempt %d failed (network): %@, retrying in %lldms",
                            retryCount, error.message, retryDelayMs)
                 setStatus(.connecting)
 
