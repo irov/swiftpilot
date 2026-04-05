@@ -6,6 +6,7 @@ public enum PilotActionType: String, Sendable {
     case toggle = "toggle"
     case liveStart = "live_start"
     case liveStop = "live_stop"
+    case liveUpdate = "live_update"
     case liveTap = "live_tap"
     case liveLongPress = "live_long_press"
     case unknown = ""

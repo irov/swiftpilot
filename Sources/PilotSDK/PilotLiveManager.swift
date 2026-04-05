@@ -9,6 +9,7 @@ final class PilotLiveManager {
     private let httpClient: PilotHttpClient
     private let lock = NSLock()
     private var isLive = false
+    private var liveSettings = LiveSettings.low()
     private let publisher = PilotLiveKitPublisher()
 #if os(iOS)
     private weak var overlayView: PilotLiveOverlayView?
@@ -35,10 +36,17 @@ final class PilotLiveManager {
             let session = try fetchPublisherSession(sessionToken: sessionToken, requestedSettings: requested)
             let liveSettings = session.settings
 
-            try publisher.start(serverUrl: session.serverUrl, participantToken: session.participantToken)
+            try publisher.start(
+                serverUrl: session.serverUrl,
+                participantToken: session.participantToken,
+                presetName: liveSettings.presetName,
+                maxDimension: liveSettings.maxDimension,
+                framesPerSecond: liveSettings.framesPerSecond
+            )
 
             lock.lock()
             isLive = true
+            self.liveSettings = liveSettings
             lock.unlock()
 
             try publisher.enableScreenShare()
@@ -80,6 +88,72 @@ final class PilotLiveManager {
             stopLiveRuntime()
             PilotLog.e("Failed to start LiveKit live: %@", error.localizedDescription)
             Pilot.event("live_start_failed", category: "live", metadata: [
+                "message": error.localizedDescription
+            ])
+            return buildAck(ok: false, status: error.localizedDescription)
+        }
+    }
+
+    func update(sessionToken: String, payload: [String: Any]?) -> [String: Any] {
+        lock.lock()
+        let live = isLive
+        lock.unlock()
+
+        guard live else {
+            return buildAck(ok: false, status: "Live is not active")
+        }
+
+        do {
+            let requested = LiveSettings.fromPayload(payload)
+            let session = try fetchPublisherSession(sessionToken: sessionToken, requestedSettings: requested)
+            let liveSettings = session.settings
+            let screenShareActive = try publisher.updateQuality(
+                presetName: liveSettings.presetName,
+                maxDimension: liveSettings.maxDimension,
+                framesPerSecond: liveSettings.framesPerSecond
+            )
+
+            lock.lock()
+            self.liveSettings = liveSettings
+            lock.unlock()
+
+            onLiveModeChanged?(true, liveSettings.actionPollIntervalMs)
+
+            var metadata: [String: Any] = [
+                "preset": liveSettings.presetName,
+                "max_dimension": liveSettings.maxDimension,
+                "fps": liveSettings.framesPerSecond,
+                "screen_share_active": screenShareActive
+            ]
+            if let roomName = session.roomName {
+                metadata["room_name"] = roomName
+            }
+            if let identity = session.participantIdentity {
+                metadata["participant_identity"] = identity
+            }
+            metadata["video_track_name"] = session.videoTrackName
+            Pilot.event("live_updated", category: "live", metadata: metadata)
+
+            var ack = buildAck(ok: true, status: screenShareActive ? "live_updated" : "live_updated_pending_capture")
+            ack["preset"] = liveSettings.presetName
+            ack["max_dimension"] = liveSettings.maxDimension
+            ack["fps"] = liveSettings.framesPerSecond
+            ack["room_name"] = session.roomName
+            ack["video_track_name"] = session.videoTrackName
+            ack["screen_share_active"] = screenShareActive
+            return ack
+
+        } catch let error as PilotError {
+            PilotLog.e("Failed to update LiveKit live quality: %@", error.message)
+            Pilot.event("live_update_failed", category: "live", metadata: [
+                "message": error.message,
+                "http_code": error.httpCode
+            ])
+            return buildAck(ok: false, status: error.message)
+
+        } catch {
+            PilotLog.e("Failed to update LiveKit live quality: %@", error.localizedDescription)
+            Pilot.event("live_update_failed", category: "live", metadata: [
                 "message": error.localizedDescription
             ])
             return buildAck(ok: false, status: error.localizedDescription)
@@ -183,6 +257,7 @@ final class PilotLiveManager {
     private func stopLiveRuntime() {
         lock.lock()
         isLive = false
+        liveSettings = .low()
         lock.unlock()
         publisher.stop()
 

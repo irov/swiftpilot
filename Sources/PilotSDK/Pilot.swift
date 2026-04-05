@@ -4,7 +4,7 @@ import UIKit
 #endif
 
 public final class Pilot {
-    public static let version = "1.0.55"
+    public static let version = "1.0.56"
 
     private static var instance: Pilot?
     private static let instanceLock = NSLock()
@@ -640,15 +640,16 @@ public final class Pilot {
             requeueLogs(logChunk)
             metrics.requeue(metricChunk)
 
-            if error.isSessionGone {
-                handleSessionGone()
+            if error.isNetworkError {
+                PilotLog.w("Network error during action poll, will retry")
             } else {
-                PilotLog.e("Action poll failed", error)
+                PilotLog.w("Action poll failed with server error, attempting reconnect")
+                attemptReconnect(token)
             }
         } catch {
             requeueLogs(logChunk)
             metrics.requeue(metricChunk)
-            PilotLog.e("Action poll failed", error)
+            PilotLog.w("Action poll failed, will retry")
         }
     }
 
@@ -741,6 +742,26 @@ public final class Pilot {
 
         case .liveStop:
             Pilot.acknowledgeAction(action.id, liveManager.stop())
+            return true
+
+        case .liveUpdate:
+            lock.lock()
+            let token = sessionToken
+            lock.unlock()
+
+            guard let token = token else {
+                let ack = buildInternalAck(ok: false, status: "No active session available for streaming")
+                Pilot.acknowledgeAction(action.id, ack)
+                return true
+            }
+
+            let actionId = action.id
+            let payload = action.payload
+            workQueue?.async { [weak self] in
+                guard let self = self else { return }
+                let result = self.liveManager.update(sessionToken: token, payload: payload)
+                Pilot.acknowledgeAction(actionId, result)
+            }
             return true
 
         case .liveTap:
@@ -880,17 +901,60 @@ public final class Pilot {
 
     // MARK: - Session management
 
-    private func handleSessionGone() {
-        PilotLog.w("Session is gone (410), stopping")
+    private func attemptReconnect(_ token: String) {
+        cancelScheduledTasks()
+        setStatus(.connecting)
+
+        var retryDelay: Int64 = 2000
+        let maxDelay: Int64 = 30000
+
+        while isRunning {
+            Thread.sleep(forTimeInterval: TimeInterval(retryDelay) / 1000.0)
+
+            guard isRunning else { return }
+
+            do {
+                let _ = try httpClient.pollActions(
+                    sessionToken: token,
+                    changedAttributes: nil,
+                    logs: [],
+                    metrics: []
+                )
+
+                PilotLog.i("Reconnect successful, session still active")
+                setStatus(.active)
+                scheduleActionPolling(sessionToken: token, intervalMs: currentActionPollIntervalMs)
+                return
+
+            } catch let error as PilotError {
+                if error.isNetworkError {
+                    PilotLog.w("Reconnect: no network, retrying in %lldms", retryDelay)
+                    retryDelay = min(retryDelay * 2, maxDelay)
+                    continue
+                }
+
+                PilotLog.w("Session lost (server error), starting fresh connection")
+                resetAndRestart()
+                return
+
+            } catch {
+                PilotLog.w("Reconnect: unknown error, retrying in %lldms", retryDelay)
+                retryDelay = min(retryDelay * 2, maxDelay)
+            }
+        }
+    }
+
+    private func resetAndRestart() {
         lock.lock()
         running = false
         sessionToken = nil
         lock.unlock()
 
         liveManager.onSessionClosed()
-        cancelScheduledTasks()
-        setStatus(.closed)
+        setStatus(.disconnected)
         notifySessionClosed()
+
+        startConnection()
     }
 
     private func setStatus(_ newStatus: PilotSessionStatus) {
