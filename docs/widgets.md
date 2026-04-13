@@ -109,8 +109,7 @@ root.addStat("Memory")
 root.addSwitch("Debug Mode")
     .defaultValue(false)
     .onChange { action in
-        let isOn = action.payload?["value"] as? Bool ?? false
-        setDebugMode(isOn)
+        setDebugMode(action.value)
     }
 ```
 
@@ -122,8 +121,7 @@ root.addInput("Player Name")
     .defaultValue("Player1")
     .placeholder("Enter name...")
     .onSubmit { action in
-        let value = action.payload?["value"] as? String ?? ""
-        setPlayerName(value)
+        setPlayerName(action.value)
     }
 ```
 
@@ -138,8 +136,7 @@ root.addSelect("Difficulty")
     ])
     .defaultValue("normal")
     .onChange { action in
-        let value = action.payload?["value"] as? String ?? ""
-        setDifficulty(value)
+        setDifficulty(action.value)
     }
 ```
 
@@ -150,8 +147,7 @@ root.addTextarea("Notes")
     .rows(4)
     .defaultValue("")
     .onSubmit { action in
-        let text = action.payload?["value"] as? String ?? ""
-        saveNotes(text)
+        saveNotes(action.value)
     }
 ```
 

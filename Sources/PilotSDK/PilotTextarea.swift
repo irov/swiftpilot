@@ -23,4 +23,10 @@ public final class PilotTextarea: PilotWidget {
         ui.registerCallback(internalId, callback)
         return self
     }
+
+    @discardableResult
+    public func onSubmit(_ callback: @escaping (PilotTextareaAction) -> Void) -> PilotTextarea {
+        ui.registerCallback(internalId) { action in callback(PilotTextareaAction(action)) }
+        return self
+    }
 }

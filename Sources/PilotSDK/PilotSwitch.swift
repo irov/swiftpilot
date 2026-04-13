@@ -17,4 +17,10 @@ public final class PilotSwitch: PilotWidget {
         ui.registerCallback(internalId, callback)
         return self
     }
+
+    @discardableResult
+    public func onChange(_ callback: @escaping (PilotSwitchAction) -> Void) -> PilotSwitch {
+        ui.registerCallback(internalId) { action in callback(PilotSwitchAction(action)) }
+        return self
+    }
 }

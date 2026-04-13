@@ -29,4 +29,10 @@ public final class PilotInput: PilotWidget {
         ui.registerCallback(internalId, callback)
         return self
     }
+
+    @discardableResult
+    public func onSubmit(_ callback: @escaping (PilotInputAction) -> Void) -> PilotInput {
+        ui.registerCallback(internalId) { action in callback(PilotInputAction(action)) }
+        return self
+    }
 }

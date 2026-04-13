@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'PilotSDK'
-  s.version          = '1.0.58'
+  s.version          = '1.0.59'
   s.summary          = 'Pilot remote debugging SDK for iOS'
   s.description      = <<-DESC
     PilotSDK provides real-time remote debugging, logging, metrics collection,
